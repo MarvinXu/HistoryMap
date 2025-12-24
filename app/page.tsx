@@ -260,8 +260,8 @@ const App = () => {
       )}
 
       {/* Main Map Area */}
-      <div className={`flex-grow relative overflow-hidden h-full flex transition-all duration-300`}>
-        <div className="flex-grow relative">
+      <div className={`grow relative overflow-hidden h-full flex transition-all duration-300`}>
+        <div className="grow relative">
             <HistoryMap 
                 savedEvents={savedEvents}
                 selectedEvent={selectedEvent}

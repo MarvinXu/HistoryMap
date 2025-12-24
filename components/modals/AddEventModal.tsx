@@ -192,7 +192,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({ isOpen, onClose, onAddEve
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className={`bg-white rounded-[2.5rem] p-8 w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200 flex flex-col ${step === 'review' ? 'max-w-2xl h-[80vh]' : 'max-w-md'}`}>
-        <div className="flex justify-between items-center mb-6 flex-shrink-0">
+        <div className="flex justify-between items-center mb-6 shrink-0">
           <h2 className="text-2xl font-black text-gray-900 flex items-center gap-3">
             {step === 'input' ? <Plus className="w-7 h-7 text-indigo-600" /> : <ListChecks className="w-7 h-7 text-green-600" />}
             {step === 'input' ? '批量添加事件' : '确认添加'}
@@ -226,8 +226,8 @@ const AddEventModal: React.FC<AddEventModalProps> = ({ isOpen, onClose, onAddEve
         )}
 
         {error && (
-          <div className="bg-red-50 text-red-600 p-4 rounded-2xl flex items-start gap-3 text-sm border border-red-100 mb-4 flex-shrink-0">
-            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <div className="bg-red-50 text-red-600 p-4 rounded-2xl flex items-start gap-3 text-sm border border-red-100 mb-4 shrink-0">
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
             <div className="font-bold">{error}</div>
           </div>
         )}
@@ -277,7 +277,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({ isOpen, onClose, onAddEve
           </div>
         ) : (
           <>
-            <div className="flex-grow overflow-y-auto space-y-3 pr-2 custom-scroll mb-6">
+            <div className="grow overflow-y-auto space-y-3 pr-2 custom-scroll mb-6">
               {reviewEvents.map(event => {
                 const isSelected = selectedReviewIds.has(event.id);
                 const year = getYearFromDate(event.dateStr);
@@ -291,12 +291,12 @@ const AddEventModal: React.FC<AddEventModalProps> = ({ isOpen, onClose, onAddEve
                         : 'bg-white border-gray-100 hover:border-gray-200'
                     }`}
                   >
-                    <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-colors mt-1 ${
+                    <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-colors mt-1 ${
                       isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300 bg-white'
                     }`}>
                       {isSelected && <Check className="w-4 h-4 text-white" />}
                     </div>
-                    <div className="flex-grow">
+                    <div className="grow">
                       <div className="flex justify-between items-start">
                          <h4 className={`font-black text-lg ${isSelected ? 'text-indigo-900' : 'text-gray-900'}`}>{event.title}</h4>
                          <span className="text-[10px] font-black bg-white/50 px-2 py-1 rounded-md text-gray-500 border border-gray-100">
@@ -314,7 +314,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({ isOpen, onClose, onAddEve
                 );
               })}
             </div>
-            <div className="flex gap-3 flex-shrink-0 border-t border-gray-100 pt-6">
+            <div className="flex gap-3 shrink-0 border-t border-gray-100 pt-6">
                <button 
                 onClick={() => setStep('input')}
                 className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-black py-4 rounded-2xl transition-all"
@@ -324,7 +324,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({ isOpen, onClose, onAddEve
               <button 
                 onClick={confirmBatchAdd}
                 disabled={selectedReviewIds.size === 0}
-                className="flex-[2] bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-indigo-100 active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50"
+                className="flex-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-indigo-100 active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 确认添加 ({selectedReviewIds.size})
               </button>

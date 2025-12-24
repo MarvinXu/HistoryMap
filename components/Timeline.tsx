@@ -88,7 +88,7 @@ const Timeline: React.FC<TimelineProps> = ({
                                       {event.title}
                                    </h4>
                                    {event.dateStr && event.dateStr.length > 4 && (
-                                      <span className="text-[10px] font-medium text-gray-400 flex-shrink-0">
+                                      <span className="text-[10px] font-medium text-gray-400 shrink-0">
                                           {event.dateStr.slice(5)}
                                       </span>
                                    )}

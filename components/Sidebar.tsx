@@ -29,11 +29,11 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div 
-      className={`bg-white/90 backdrop-blur-3xl border-r border-gray-200/60 flex flex-col z-30 shadow-[4px_0_24px_-4px_rgba(0,0,0,0.05)] transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] h-full relative flex-shrink-0 overflow-hidden ${
-        isOpen ? 'w-[25rem] translate-x-0' : 'w-0 -translate-x-4'
+      className={`bg-white/90 backdrop-blur-3xl border-r border-gray-200/60 flex flex-col z-30 shadow-[4px_0_24px_-4px_rgba(0,0,0,0.05)] transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] h-full relative shrink-0 overflow-hidden ${
+        isOpen ? 'w-100 translate-x-0' : 'w-0 -translate-x-4'
       }`}
     >
-      <div className="p-7 border-b border-gray-100/80 min-w-[25rem] flex-shrink-0 flex flex-col gap-6">
+      <div className="p-7 border-b border-gray-100/80 min-w-100 shrink-0 flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-black text-gray-900 tracking-tighter flex items-center gap-3">
             <span className="w-4 h-4 bg-indigo-600 rounded-full shadow-sm"></span>
@@ -93,7 +93,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         <div className="flex gap-2">
-           <div className="relative group flex-grow">
+           <div className="relative group grow">
             <input
               type="text"
               className="w-full bg-gray-50/80 border border-gray-100 rounded-2xl py-3 pl-10 pr-10 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none text-gray-900 placeholder-gray-400 font-bold text-sm"
@@ -125,10 +125,10 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      <div className="flex-grow overflow-y-auto p-5 hide-scrollbar min-w-[25rem] relative">
+      <div className="grow overflow-y-auto p-5 hide-scrollbar min-w-100 relative">
         {error && (
           <div className="bg-red-50 text-red-600 p-5 rounded-3xl flex items-start gap-3 text-sm border border-red-100 animate-in fade-in slide-in-from-top-4 mb-4">
-            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
             <div className="font-bold leading-relaxed">{error}</div>
           </div>
         )}
