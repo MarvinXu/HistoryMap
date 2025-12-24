@@ -10,8 +10,12 @@ interface HistoryMapProps {
 
 const HistoryMap: React.FC<HistoryMapProps> = ({ savedEvents, selectedEvent, onSelectEvent }) => {
   const mapRef = useRef<L.Map | null>(null);
+  
+  // Use LayerGroups to manage markers efficiently without full re-renders
+  const savedLayerRef = useRef<L.LayerGroup | null>(null);
+
+  // Cache references to saved markers by ID for quick access during selection
   const markersRef = useRef<{ [key: string]: L.CircleMarker }>({});
-  const tempMarkerRef = useRef<L.CircleMarker | null>(null);
 
   useEffect(() => {
     if (!mapRef.current) {
@@ -26,6 +30,9 @@ const HistoryMap: React.FC<HistoryMapProps> = ({ savedEvents, selectedEvent, onS
       
       L.control.zoom({ position: 'bottomright' }).addTo(mapRef.current);
       L.control.attribution({ position: 'bottomright' }).addTo(mapRef.current);
+
+      // Initialize layer for saved markers
+      savedLayerRef.current = L.layerGroup().addTo(mapRef.current);
     }
 
     return () => {
@@ -38,10 +45,10 @@ const HistoryMap: React.FC<HistoryMapProps> = ({ savedEvents, selectedEvent, onS
 
   // Update saved markers
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || !savedLayerRef.current) return;
 
-    // Clear old saved markers
-    Object.values(markersRef.current).forEach(marker => marker.remove());
+    // Clear old saved markers using LayerGroup
+    savedLayerRef.current.clearLayers();
     markersRef.current = {};
 
     savedEvents.forEach(event => {
@@ -54,15 +61,15 @@ const HistoryMap: React.FC<HistoryMapProps> = ({ savedEvents, selectedEvent, onS
         fillOpacity: 1,
         className: 'saved-marker-pulse'
       })
-      .addTo(mapRef.current!)
-      .bindPopup(`<b>${event.title}</b><br><small>${event.dateStr}</small>`);
+      .addTo(savedLayerRef.current)
+      .bindPopup(`<b>${event.title}</b><br><small>${event.dateStr}</small>`, {autoPan: false});
       
       marker.on('click', () => onSelectEvent(event));
       markersRef.current[event.id] = marker;
     });
   }, [savedEvents, onSelectEvent]);
 
-  // Handle selected event localization (both saved and search results)
+  // Handle selected event localization
   useEffect(() => {
     if (!mapRef.current || !selectedEvent) return;
 
@@ -73,31 +80,10 @@ const HistoryMap: React.FC<HistoryMapProps> = ({ savedEvents, selectedEvent, onS
       { duration: 1.5, easeLinearity: 0.1 }
     );
 
-    // If it's a search result (not in savedEvents), show a temporary amber marker
-    if (tempMarkerRef.current) {
-      tempMarkerRef.current.remove();
-      tempMarkerRef.current = null;
-    }
-
-    const isSaved = savedEvents.some(e => e.id === selectedEvent.id);
-    if (!isSaved) {
-      tempMarkerRef.current = L.circleMarker([selectedEvent.location.lat, selectedEvent.location.lng], {
-        radius: 12,
-        fillColor: "#f59e0b", // Amber/Orange
-        color: "#fff",
-        weight: 4,
-        opacity: 1,
-        fillOpacity: 1,
-        className: 'animate-pulse'
-      })
-      .addTo(mapRef.current!)
-      .bindPopup(`<b>${selectedEvent.title} (预览)</b>`);
-      
-      tempMarkerRef.current.openPopup();
-    } else {
-      // If it's already saved, open its existing popup if available
-      const marker = markersRef.current[selectedEvent.id];
-      if (marker) marker.openPopup();
+    // If it's already saved, open its existing popup with delay
+    const marker = markersRef.current[selectedEvent.id];
+    if (marker) {
+      setTimeout(() => marker.openPopup(), 100);
     }
   }, [selectedEvent, savedEvents]);
 
