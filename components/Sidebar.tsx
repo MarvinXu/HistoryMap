@@ -29,7 +29,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div 
-      className={`bg-white/90 backdrop-blur-3xl border-r border-gray-200/60 flex flex-col z-30 shadow-[4px_0_24px_-4px_rgba(0,0,0,0.05)] transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] h-full relative shrink-0 overflow-hidden ${isOpen ? 'w-90 translate-x-0' : 'w-0 -translate-x-4'}`}
+      className={`bg-white/90 backdrop-blur-3xl border-r border-gray-200/60 flex flex-col z-30 shadow-[4px_0_24px_-4px_rgba(0,0,0,0.05)] transition-all duration-500 ease-in-out h-full relative shrink-0 overflow-hidden w-90 ${isOpen ? 'ml-0 opacity-100' : '-ml-90 opacity-90'}`}
     >
       <div className="p-7 border-b border-gray-100/80 min-w-90 shrink-0 flex flex-col gap-6">
         <div className="flex items-center justify-between">

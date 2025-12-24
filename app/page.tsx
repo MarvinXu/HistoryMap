@@ -229,8 +229,11 @@ const App = () => {
         />
 
       {/* Floating Buttons (When Sidebar Hidden) */}
-      {!isSidebarOpen && (
-        <div className="absolute top-8 left-8 z-40 flex flex-col gap-4 animate-in fade-in slide-in-from-left-6 duration-300">
+        <div className={`absolute top-8 left-8 z-40 flex flex-col gap-4 transition-all duration-500 ease-in-out ${
+          !isSidebarOpen 
+          ? 'opacity-100 translate-x-0 delay-300 pointer-events-auto' 
+          : 'opacity-0 -translate-x-4 pointer-events-none'
+        }`}>
           <button 
             onClick={() => setIsSidebarOpen(true)}
             className="w-14 h-14 bg-white/95 backdrop-blur-2xl border border-white/40 rounded-[1.2rem] shadow-[0_8px_30px_rgb(0,0,0,0.08)] flex items-center justify-center text-indigo-600 hover:scale-105 transition-all active:scale-95"
@@ -257,7 +260,6 @@ const App = () => {
             )}
           </button>
         </div>
-      )}
 
       {/* Main Map Area */}
       <div className={`grow relative overflow-hidden h-full flex transition-all duration-300`}>
