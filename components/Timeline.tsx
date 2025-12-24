@@ -62,7 +62,7 @@ const Timeline: React.FC<TimelineProps> = ({
           sortedYears.map(year => (
             <div key={year} className="relative pl-14">
                {/* Year Dot Marker */}
-               <div className="absolute left-4 top-1.5 w-4 h-4 rounded-full border-2 border-indigo-300 bg-white z-10 shadow-sm"></div>
+               <div className="absolute left-2.5 top-1.5 w-4 h-4 rounded-full border-2 border-indigo-300 bg-white z-10 shadow-sm"></div>
                
                {/* Year Header */}
                <div className="mb-3 flex items-center -ml-1">
