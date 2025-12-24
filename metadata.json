@@ -1,0 +1,7 @@
+{
+  "name": "历迹 (HistoryMap) - 交互式历史学习工具",
+  "description": "一个基于地图的历史学习工具，通过 Gemini AI 查询历史事件，在地图上标点并在时间轴上进行可视化展示，帮助用户直观理解历史地理演变。",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
