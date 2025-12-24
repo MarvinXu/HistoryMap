@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
         systemInstruction: "你是一个历史数据补全助手。接收用户输入的事件名称列表，返回标准的 JSON 数组。优先保留用户的输入作为标题。",
