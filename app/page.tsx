@@ -10,7 +10,7 @@ import GithubConfigModal from '../components/modals/GithubConfigModal';
 import AddEventModal from '../components/modals/AddEventModal';
 import { getGistData, saveGistData, getUserProfile, findOrCreateGist } from '../services/githubService';
 import { HistoricalEvent, GitHubConfig, UserProfile } from '../types';
-import { getYearFromDate } from '../utils';
+import { getYearFromDate, compareDateStrings } from '../utils';
 
 // Dynamically import HistoryMap with SSR disabled
 const HistoryMap = dynamic(() => import('../components/HistoryMap'), {
@@ -90,7 +90,12 @@ const App = () => {
       const config = { token, gistId };
       setGhConfig(config);
       const data = await getGistData(config);
-      setSavedEvents(data.map(e => ({ ...e, id: e.id || crypto.randomUUID(), isSaved: true })));
+      
+      // 按日期排序从GitHub加载的事件
+      const sortedData = data.map(e => ({ ...e, id: e.id || crypto.randomUUID(), isSaved: true }))
+        .sort((a, b) => compareDateStrings(a.dateStr, b.dateStr));
+      
+      setSavedEvents(sortedData);
       setHasUnsavedChanges(false);
       setShowConfig(false);
     } catch (err: any) {
@@ -131,7 +136,13 @@ const App = () => {
         id: e.id || crypto.randomUUID(), 
         isSaved: true 
     }));
-    setSavedEvents(prev => [...prev, ...eventsWithIds]);
+    
+    // 合并并按日期排序事件
+    const sortedEvents = [...savedEvents, ...eventsWithIds].sort((a, b) => 
+      compareDateStrings(a.dateStr, b.dateStr)
+    );
+    
+    setSavedEvents(sortedEvents);
     setHasUnsavedChanges(true);
     setIsAddModalOpen(false);
     // Select the first new event
@@ -157,7 +168,14 @@ const App = () => {
   };
 
   const handleUpdateEvent = (updatedEvent: HistoricalEvent) => {
-    setSavedEvents(prev => prev.map(e => e.id === updatedEvent.id ? { ...updatedEvent, isSaved: true } : e));
+    // 先移除旧事件，再添加更新后的事件，最后重新排序
+    const updatedEvents = savedEvents.filter(e => e.id !== updatedEvent.id);
+    const newEvents = [...updatedEvents, { ...updatedEvent, isSaved: true }];
+    
+    // 按日期排序
+    const sortedEvents = newEvents.sort((a, b) => compareDateStrings(a.dateStr, b.dateStr));
+    
+    setSavedEvents(sortedEvents);
     setHasUnsavedChanges(true);
     setSelectedEvent(updatedEvent);
   };

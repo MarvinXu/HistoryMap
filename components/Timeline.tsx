@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { HistoricalEvent } from '../types';
-import { getYearFromDate } from '../utils';
+import { getYearFromDate, compareDateStrings } from '../utils';
 
 interface TimelineProps {
   events: HistoricalEvent[];
@@ -34,6 +34,15 @@ const Timeline: React.FC<TimelineProps> = ({
 
   const sortedYears = useMemo(() => Object.keys(eventsByYear).map(Number).sort((a, b) => a - b), [eventsByYear]);
 
+  // 确保同一年份内的事件按日期排序
+  const sortedEventsByYear = useMemo(() => {
+    const result = { ...eventsByYear };
+    Object.keys(result).forEach(year => {
+      result[parseInt(year)].sort((a, b) => compareDateStrings(a.dateStr, b.dateStr));
+    });
+    return result;
+  }, [eventsByYear]);
+
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 relative pl-2">
       <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] px-3 mb-6 flex items-center gap-2">
@@ -64,17 +73,15 @@ const Timeline: React.FC<TimelineProps> = ({
 
                {/* Events List for this Year */}
                <div className="space-y-1.5">
-                  {eventsByYear[year].map(event => {
+                  {sortedEventsByYear[year].map(event => {
                       const isSelected = selectedEvent?.id === event.id;
                       return (
                           <button
                               key={event.id}
                               onClick={() => onSelectEvent(event)}
-                              className={`w-full text-left px-3 py-2.5 rounded-xl transition-all border relative overflow-hidden group/card ${
-                                  isSelected
+                              className={`w-full text-left px-3 py-2.5 rounded-xl transition-all border relative overflow-hidden group/card ${isSelected
                                   ? 'bg-white border-indigo-200 shadow-sm ring-1 ring-indigo-500/20'
-                                  : 'bg-white/40 border-transparent hover:bg-white hover:shadow-sm hover:border-gray-100'
-                              }`}
+                                  : 'bg-white/40 border-transparent hover:bg-white hover:shadow-sm hover:border-gray-100'}`}
                           >
                               <div className="flex justify-between items-baseline gap-2">
                                    <h4 className={`font-bold text-[13px] leading-snug transition-colors ${isSelected ? 'text-indigo-900' : 'text-gray-700'}`}>
@@ -99,3 +106,8 @@ const Timeline: React.FC<TimelineProps> = ({
 };
 
 export default Timeline;
+
+
+
+
+
