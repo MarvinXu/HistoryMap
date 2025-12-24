@@ -1,16 +1,22 @@
+"use client";
 
 import React, { useState, useEffect } from 'react';
-import { createRoot } from 'react-dom/client';
+import dynamic from 'next/dynamic';
 import { Menu, Plus, Settings } from 'lucide-react';
-import HistoryMap from './components/HistoryMap';
-import Sidebar from './components/Sidebar';
-import EventDetailPanel from './components/EventDetailPanel';
-import DeleteConfirmModal from './components/modals/DeleteConfirmModal';
-import GithubConfigModal from './components/modals/GithubConfigModal';
-import AddEventModal from './components/modals/AddEventModal';
-import { getGistData, saveGistData, getUserProfile, findOrCreateGist } from './services/githubService';
-import { HistoricalEvent, GitHubConfig, UserProfile } from './types';
-import { getYearFromDate } from './utils';
+import Sidebar from '../components/Sidebar';
+import EventDetailPanel from '../components/EventDetailPanel';
+import DeleteConfirmModal from '../components/modals/DeleteConfirmModal';
+import GithubConfigModal from '../components/modals/GithubConfigModal';
+import AddEventModal from '../components/modals/AddEventModal';
+import { getGistData, saveGistData, getUserProfile, findOrCreateGist } from '../services/githubService';
+import { HistoricalEvent, GitHubConfig, UserProfile } from '../types';
+import { getYearFromDate } from '../utils';
+
+// Dynamically import HistoryMap with SSR disabled
+const HistoryMap = dynamic(() => import('../components/HistoryMap'), {
+  ssr: false,
+  loading: () => <div className="w-full h-full bg-gray-100 flex items-center justify-center">Loading Map...</div>
+});
 
 const App = () => {
   // Data States
@@ -27,12 +33,19 @@ const App = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   // GitHub Config
-  const [ghConfig, setGhConfig] = useState<GitHubConfig>(() => {
+  const [ghConfig, setGhConfig] = useState<GitHubConfig>({ token: '', gistId: '' });
+
+  useEffect(() => {
+    setIsMounted(true);
+    // Access localStorage only on client side
     const saved = localStorage.getItem('gh_config');
-    return saved ? JSON.parse(saved) : { token: '', gistId: '' };
-  });
+    if (saved) {
+      setGhConfig(JSON.parse(saved));
+    }
+  }, []);
 
   // --- Effects ---
 
@@ -41,11 +54,13 @@ const App = () => {
     if (ghConfig.token) {
       handleLogin(ghConfig.token);
     }
-  }, []);
+  }, [ghConfig.token]);
 
   // Save config to local storage
   useEffect(() => {
-    localStorage.setItem('gh_config', JSON.stringify(ghConfig));
+    if (ghConfig.token || ghConfig.gistId) {
+      localStorage.setItem('gh_config', JSON.stringify(ghConfig));
+    }
   }, [ghConfig]);
 
   // Auto-sync
@@ -101,99 +116,99 @@ const App = () => {
     try {
       await saveGistData(ghConfig, savedEvents);
       setHasUnsavedChanges(false);
+      const now = new Date();
+      console.log(`Synced at ${now.toLocaleTimeString()}`);
     } catch (err: any) {
-      setError(`同步失败: ${err.message}`);
+      setError("同步失败: " + err.message);
     } finally {
       setSyncing(false);
     }
   };
 
   const handleAddEvents = (newEvents: HistoricalEvent[]) => {
-    const updatedSaved = [...savedEvents];
-    let addedCount = 0;
-
-    newEvents.forEach(event => {
-      if (!event.id) event.id = crypto.randomUUID();
-      const eventYear = getYearFromDate(event.dateStr);
-      // Simple duplicate check
-      const exists = updatedSaved.some(e => e.title === event.title && getYearFromDate(e.dateStr) === eventYear);
-      if (!exists) {
-        updatedSaved.push({ ...event, isSaved: true });
-        addedCount++;
-      }
-    });
-
-    if (addedCount > 0) {
-      setSavedEvents(updatedSaved);
-      setHasUnsavedChanges(true);
-      setSelectedEvent(newEvents[newEvents.length - 1]);
+    const eventsWithIds = newEvents.map(e => ({ 
+        ...e, 
+        id: e.id || crypto.randomUUID(), 
+        isSaved: true 
+    }));
+    setSavedEvents(prev => [...prev, ...eventsWithIds]);
+    setHasUnsavedChanges(true);
+    setIsAddModalOpen(false);
+    // Select the first new event
+    if (eventsWithIds.length > 0) {
+        setSelectedEvent(eventsWithIds[0]);
     }
   };
 
   const requestDeleteEvent = (id: string) => {
-    setDeleteConfirmationId(id);
+      setDeleteConfirmationId(id);
   };
 
   const confirmDeleteEvent = () => {
-    if (!deleteConfirmationId) return;
-    setSavedEvents(prev => prev.filter(ev => ev.id !== deleteConfirmationId));
-    setHasUnsavedChanges(true);
-    if (selectedEvent?.id === deleteConfirmationId) {
-      setSelectedEvent(null);
-    }
-    setDeleteConfirmationId(null);
+      if (!deleteConfirmationId) return;
+      const id = deleteConfirmationId;
+      
+      setSavedEvents(prev => prev.filter(e => e.id !== id));
+      setHasUnsavedChanges(true);
+      if (selectedEvent?.id === id) {
+        setSelectedEvent(null);
+      }
+      setDeleteConfirmationId(null);
   };
 
   const handleUpdateEvent = (updatedEvent: HistoricalEvent) => {
-    setSavedEvents(prev => prev.map(ev => ev.id === updatedEvent.id ? { ...updatedEvent, isSaved: true } : ev));
+    setSavedEvents(prev => prev.map(e => e.id === updatedEvent.id ? { ...updatedEvent, isSaved: true } : e));
     setHasUnsavedChanges(true);
-    setSelectedEvent({ ...updatedEvent, isSaved: true });
+    setSelectedEvent(updatedEvent);
   };
 
+  if (!isMounted) {
+    return null; 
+  }
+
   return (
-    <div className="relative w-screen h-screen bg-[#f1f5f9] flex overflow-hidden font-sans">
-      
-      {/* Modals */}
-      <DeleteConfirmModal 
-        isOpen={!!deleteConfirmationId} 
-        onClose={() => setDeleteConfirmationId(null)} 
-        onConfirm={confirmDeleteEvent} 
-      />
-      
-      <GithubConfigModal 
-        isOpen={showConfig}
-        onClose={() => setShowConfig(false)}
-        userProfile={userProfile}
-        config={ghConfig}
-        error={error}
-        syncing={syncing}
-        onLogin={handleLogin}
-        onLogout={handleLogout}
-      />
+    <div className="flex h-screen w-screen relative bg-[#f1f5f9] overflow-hidden font-sans">
+        {/* Modals */}
+        <DeleteConfirmModal 
+            isOpen={!!deleteConfirmationId} 
+            onClose={() => setDeleteConfirmationId(null)} 
+            onConfirm={confirmDeleteEvent} 
+        />
+        
+        <GithubConfigModal 
+            isOpen={showConfig}
+            onClose={() => setShowConfig(false)}
+            userProfile={userProfile}
+            config={ghConfig}
+            error={error}
+            syncing={syncing}
+            onLogin={handleLogin}
+            onLogout={handleLogout}
+        />
 
-      <AddEventModal 
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onAddEvents={handleAddEvents}
-      />
+        <AddEventModal 
+            isOpen={isAddModalOpen}
+            onClose={() => setIsAddModalOpen(false)}
+            onAddEvents={handleAddEvents}
+        />
 
-      {/* Main Layout */}
-      <Sidebar 
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        savedEvents={savedEvents}
-        selectedEvent={selectedEvent}
-        onSelectEvent={setSelectedEvent}
-        onAddClick={() => setIsAddModalOpen(true)}
-        onConfigClick={() => setShowConfig(true)}
-        onSync={handleSync}
-        userProfile={userProfile}
-        syncing={syncing}
-        hasUnsavedChanges={hasUnsavedChanges}
-        filterQuery={filterQuery}
-        setFilterQuery={setFilterQuery}
-        error={error}
-      />
+        {/* Sidebar */}
+        <Sidebar 
+            isOpen={isSidebarOpen}
+            onClose={() => setIsSidebarOpen(false)}
+            savedEvents={savedEvents}
+            selectedEvent={selectedEvent}
+            onSelectEvent={setSelectedEvent}
+            onAddClick={() => setIsAddModalOpen(true)}
+            onConfigClick={() => setShowConfig(true)}
+            onSync={handleSync}
+            userProfile={userProfile}
+            syncing={syncing}
+            hasUnsavedChanges={hasUnsavedChanges}
+            filterQuery={filterQuery}
+            setFilterQuery={setFilterQuery}
+            error={error}
+        />
 
       {/* Floating Buttons (When Sidebar Hidden) */}
       {!isSidebarOpen && (
@@ -226,26 +241,28 @@ const App = () => {
         </div>
       )}
 
-      {/* Main Content Area */}
-      <div className="flex-grow relative overflow-hidden h-full flex">
+      {/* Main Map Area */}
+      <div className={`flex-grow relative overflow-hidden h-full flex transition-all duration-300`}>
         <div className="flex-grow relative">
-          <HistoryMap 
-            savedEvents={savedEvents}
-            selectedEvent={selectedEvent}
-            onSelectEvent={setSelectedEvent} 
-          />
+            <HistoryMap 
+                savedEvents={savedEvents}
+                selectedEvent={selectedEvent}
+                onSelectEvent={setSelectedEvent}
+            />
 
-          <EventDetailPanel 
-            event={selectedEvent}
-            onClose={() => setSelectedEvent(null)}
-            onDelete={requestDeleteEvent}
-            onUpdate={handleUpdateEvent}
-          />
+            {/* Event Detail Panel */}
+            {selectedEvent && (
+                <EventDetailPanel
+                    event={selectedEvent}
+                    onClose={() => setSelectedEvent(null)}
+                    onUpdate={handleUpdateEvent}
+                    onDelete={requestDeleteEvent} 
+                />
+            )}
         </div>
       </div>
     </div>
   );
 };
 
-const root = createRoot(document.getElementById('root')!);
-root.render(<App />);
+export default App;

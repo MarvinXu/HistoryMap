@@ -1,8 +1,6 @@
-
 import React, { useEffect, useRef } from 'react';
+import L from 'leaflet';
 import { HistoricalEvent } from '../types';
-
-declare const L: any;
 
 interface HistoryMapProps {
   savedEvents: HistoricalEvent[];
@@ -11,9 +9,9 @@ interface HistoryMapProps {
 }
 
 const HistoryMap: React.FC<HistoryMapProps> = ({ savedEvents, selectedEvent, onSelectEvent }) => {
-  const mapRef = useRef<any>(null);
-  const markersRef = useRef<{ [key: string]: any }>({});
-  const tempMarkerRef = useRef<any>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const markersRef = useRef<{ [key: string]: L.CircleMarker }>({});
+  const tempMarkerRef = useRef<L.CircleMarker | null>(null);
 
   useEffect(() => {
     if (!mapRef.current) {
@@ -98,16 +96,12 @@ const HistoryMap: React.FC<HistoryMapProps> = ({ savedEvents, selectedEvent, onS
       tempMarkerRef.current.openPopup();
     } else {
       // If it's already saved, open its existing popup if available
-      const existingMarker = markersRef.current[selectedEvent.id];
-      if (existingMarker) {
-        existingMarker.openPopup();
-      }
+      const marker = markersRef.current[selectedEvent.id];
+      if (marker) marker.openPopup();
     }
   }, [selectedEvent, savedEvents]);
 
-  return (
-    <div id="map-container" className="w-full h-full z-0 bg-[#f8fafc]" />
-  );
+  return <div id="map-container" className="h-full w-full bg-slate-100" />;
 };
 
 export default HistoryMap;
