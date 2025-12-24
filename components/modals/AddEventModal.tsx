@@ -16,40 +16,159 @@ const AddEventModal: React.FC<AddEventModalProps> = ({ isOpen, onClose, onAddEve
   const [reviewEvents, setReviewEvents] = useState<HistoricalEvent[]>([]);
   const [selectedReviewIds, setSelectedReviewIds] = useState<Set<string>>(new Set());
   const [step, setStep] = useState<'input' | 'review'>('input');
+  const [activeTab, setActiveTab] = useState<'ai' | 'manual'>('ai');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handleBatchAnalyze = async () => {
-    const names = batchInput.split('\n').map(s => s.trim()).filter(s => s.length > 0);
-    if (names.length === 0) {
-      setError("请输入至少一个事件名称");
-      return;
+  const parseManualEvents = (input: string): { events: HistoricalEvent[], error: string | null } => {
+    const events: HistoricalEvent[] = [];
+    const eventBlocks = input.split('--').map(block => block.trim()).filter(block => block.length > 0);
+
+    if (eventBlocks.length === 0) {
+      return { events: [], error: '请输入至少一个事件信息' };
     }
 
-    setLoading(true);
-    setError(null);
-    try {
-      const results = await fetchEventDetailsBatch(names);
-      if (results.length === 0) {
-        setError("AI 未能识别任何事件，请尝试更具体的名称");
-        setLoading(false);
+    for (let i = 0; i < eventBlocks.length; i++) {
+      const block = eventBlocks[i];
+      const event: any = { id: crypto.randomUUID() };
+      const lines = block.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+      const fieldSet = new Set<string>();
+
+      for (const line of lines) {
+        const [field, value] = line.split('::').map(part => part.trim());
+        if (!field || !value) {
+          return { events: [], error: `第 ${i + 1} 个事件格式错误：请使用 "字段::值" 格式` };
+        }
+        
+        const fieldKey = field.toLowerCase();
+        if (fieldSet.has(fieldKey)) {
+          return { events: [], error: `第 ${i + 1} 个事件格式错误：重复的字段 "${field}"` };
+        }
+        fieldSet.add(fieldKey);
+
+        switch (fieldKey) {
+          case '标题':
+          case 'title':
+            event.title = value;
+            break;
+          case '日期':
+          case 'date':
+            if (!/^\d/.test(value)) {
+              return { events: [], error: `第 ${i + 1} 个事件格式错误：日期格式不正确，应为数字开头` };
+            }
+            event.dateStr = value;
+            break;
+          case '地点':
+          case 'location':
+            if (!event.location) {
+              event.location = { name: value, lat: 0, lng: 0 };
+            } else {
+              event.location.name = value;
+            }
+            break;
+          case '纬度':
+          case 'lat': {
+            const lat = parseFloat(value);
+            if (isNaN(lat)) {
+              return { events: [], error: `第 ${i + 1} 个事件格式错误：纬度必须是有效数字` };
+            }
+            if (lat < -90 || lat > 90) {
+              return { events: [], error: `第 ${i + 1} 个事件格式错误：纬度必须在 -90 到 90 之间` };
+            }
+            if (!event.location) {
+              event.location = { name: '', lat, lng: 0 };
+            } else {
+              event.location.lat = lat;
+            }
+            break;
+          }
+          case '经度':
+          case 'lng':
+          case 'lon': {
+            const lng = parseFloat(value);
+            if (isNaN(lng)) {
+              return { events: [], error: `第 ${i + 1} 个事件格式错误：经度必须是有效数字` };
+            }
+            if (lng < -180 || lng > 180) {
+              return { events: [], error: `第 ${i + 1} 个事件格式错误：经度必须在 -180 到 180 之间` };
+            }
+            if (!event.location) {
+              event.location = { name: '', lat: 0, lng };
+            } else {
+              event.location.lng = lng;
+            }
+            break;
+          }
+          case '描述':
+          case 'description':
+            event.description = value;
+            break;
+          default:
+            return { events: [], error: `第 ${i + 1} 个事件格式错误：未知字段 "${field}"` };
+        }
+      }
+
+      if (!event.title) {
+        return { events: [], error: `第 ${i + 1} 个事件缺少必填字段：标题` };
+      }
+      if (!event.dateStr) {
+        return { events: [], error: `第 ${i + 1} 个事件缺少必填字段：日期` };
+      }
+
+      events.push({
+        ...event,
+        location: event.location || { name: '', lat: 0, lng: 0 },
+        description: event.description || ''
+      });
+    }
+
+    return { events, error: null };
+  };
+
+  const handleBatchAnalyze = async () => {
+    if (activeTab === 'ai') {
+      const names = batchInput.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+      if (names.length === 0) {
+        setError("请输入至少一个事件名称");
         return;
       }
-      
-      const resultsWithIds = results.map(e => ({
-        ...e,
-        id: e.id || crypto.randomUUID()
-      }));
 
-      setReviewEvents(resultsWithIds);
-      setSelectedReviewIds(new Set(resultsWithIds.map(e => e.id)));
+      setLoading(true);
+      setError(null);
+      try {
+        const results = await fetchEventDetailsBatch(names);
+        if (results.length === 0) {
+          setError("AI 未能识别任何事件，请尝试更具体的名称");
+          setLoading(false);
+          return;
+        }
+        
+        const resultsWithIds = results.map(e => ({
+          ...e,
+          id: e.id || crypto.randomUUID()
+        }));
+
+        setReviewEvents(resultsWithIds);
+        setSelectedReviewIds(new Set(resultsWithIds.map(e => e.id)));
+        setStep('review');
+      } catch (err) {
+        setError("AI 分析失败，请稍后重试");
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Manual input parsing
+      const { events, error } = parseManualEvents(batchInput);
+      if (error) {
+        setError(error);
+        return;
+      }
+
+      setReviewEvents(events);
+      setSelectedReviewIds(new Set(events.map(e => e.id)));
       setStep('review');
-    } catch (err) {
-      setError("AI 分析失败，请稍后重试");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -83,6 +202,29 @@ const AddEventModal: React.FC<AddEventModalProps> = ({ isOpen, onClose, onAddEve
           </button>
         </div>
 
+        {step === 'input' && (
+          <div className="flex space-x-1 bg-gray-100 p-1 rounded-2xl mb-6">
+            <button
+              onClick={() => setActiveTab('ai')}
+              className={`flex-1 py-3 px-4 rounded-xl font-bold transition-all ${activeTab === 'ai' ? 'bg-white text-indigo-900 shadow-sm' : 'bg-transparent text-gray-500 hover:text-gray-700'}`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <Sparkles className={`w-4 h-4 ${activeTab === 'ai' ? 'text-indigo-600' : 'text-gray-400'}`} />
+                AI 辅助
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('manual')}
+              className={`flex-1 py-3 px-4 rounded-xl font-bold transition-all ${activeTab === 'manual' ? 'bg-white text-indigo-900 shadow-sm' : 'bg-transparent text-gray-500 hover:text-gray-700'}`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <ListChecks className={`w-4 h-4 ${activeTab === 'manual' ? 'text-indigo-600' : 'text-gray-400'}`} />
+                手动输入
+              </div>
+            </button>
+          </div>
+        )}
+
         {error && (
           <div className="bg-red-50 text-red-600 p-4 rounded-2xl flex items-start gap-3 text-sm border border-red-100 mb-4 flex-shrink-0">
             <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -92,12 +234,28 @@ const AddEventModal: React.FC<AddEventModalProps> = ({ isOpen, onClose, onAddEve
 
         {step === 'input' ? (
           <div className="space-y-6">
-             <p className="text-sm text-gray-500 font-bold">
-              请输入历史事件名称（每行一个）。<br/>AI 将自动补充年份、地点和详细描述。
-            </p>
+            {activeTab === 'ai' ? (
+              <p className="text-sm text-gray-500 font-bold">
+                请输入历史事件名称（每行一个）。<br/>AI 将自动补充年份、地点和详细描述。
+              </p>
+            ) : (
+              <p className="text-sm text-gray-500 font-bold">
+                请按照以下格式输入事件信息（支持中文或英文字段名）：<br/>
+                <span className="text-indigo-600">标题::事件名称</span><br/>
+                <span className="text-indigo-600">日期::YYYY-MM-DD</span><br/>
+                <span className="text-indigo-600">地点::事件地点</span><br/>
+                <span className="text-indigo-600">纬度::30.1234</span><br/>
+                <span className="text-indigo-600">经度::120.5678</span><br/>
+                <span className="text-indigo-600">描述::事件描述</span><br/>
+                <span className="text-indigo-600">--</span>（分隔不同事件）
+              </p>
+            )}
             <textarea
               className="w-full h-48 bg-gray-50 border border-gray-200 rounded-2xl p-4 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none font-bold text-gray-900 resize-none leading-relaxed"
-              placeholder={`例如：\n赤壁之战\n凡尔赛条约签订\n阿波罗11号登月`}
+              placeholder={activeTab === 'ai' ? 
+                `例如：\n赤壁之战\n凡尔赛条约签订\n阿波罗11号登月` : 
+                `例如：\n标题::赤壁之战\n日期::208-09\n地点::赤壁\n纬度::29.8394\n经度::113.9872\n描述::三国时期重要战役\n--\n标题::凡尔赛条约签订\n日期::1919-06-28\n地点::巴黎凡尔赛宫\n纬度::48.8020\n经度::2.1374\n描述::一战后和平条约`
+              }
               value={batchInput}
               onChange={(e) => setBatchInput(e.target.value)}
             />
@@ -108,11 +266,11 @@ const AddEventModal: React.FC<AddEventModalProps> = ({ isOpen, onClose, onAddEve
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" /> AI 正在解析历史数据...
+                  <Loader2 className="w-5 h-5 animate-spin" /> {activeTab === 'ai' ? 'AI 正在解析历史数据...' : '正在处理事件信息...'}
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-5 h-5" /> 开始分析
+                  {activeTab === 'ai' ? <Sparkles className="w-5 h-5" /> : <ListChecks className="w-5 h-5" />} {activeTab === 'ai' ? '开始分析' : '生成预览'}
                 </>
               )}
             </button>
