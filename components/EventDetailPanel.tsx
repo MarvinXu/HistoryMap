@@ -137,7 +137,29 @@ const EventDetailPanel: React.FC<EventDetailPanelProps> = ({ event, onClose, onD
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none font-bold text-gray-900"
                   />
                 </div>
-                 <div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">纬度 (Lat)</label>
+                    <input 
+                      type="number" 
+                      step="0.000001"
+                      value={editForm.location.lat}
+                      onChange={(e) => setEditForm({...editForm, location: {...editForm.location, lat: parseFloat(e.target.value)}})}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none font-bold text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">经度 (Lng)</label>
+                    <input 
+                      type="number" 
+                      step="0.000001"
+                      value={editForm.location.lng}
+                      onChange={(e) => setEditForm({...editForm, location: {...editForm.location, lng: parseFloat(e.target.value)}})}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none font-bold text-gray-900"
+                    />
+                  </div>
+                </div>
+                <div>
                   <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">描述</label>
                   <textarea 
                     value={editForm.description}
