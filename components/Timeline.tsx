@@ -44,14 +44,14 @@ const Timeline: React.FC<TimelineProps> = ({
   }, [eventsByYear]);
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 relative pl-2">
+    <div className="animate-in fade-in slide-in-from-bottom-4 relative">
       <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] px-3 mb-6 flex items-center gap-2">
         <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
         时间轴
       </h3>
       
       {/* Timeline Vertical Line */}
-      <div className="absolute left-6 top-12 bottom-4 w-0.5 bg-indigo-100/50 rounded-full"></div>
+      <div className="absolute left-4 top-12 bottom-4 w-0.5 bg-indigo-100/50 rounded-full"></div>
 
       <div className="space-y-8 relative">
         {filteredEvents.length === 0 ? (
@@ -60,12 +60,12 @@ const Timeline: React.FC<TimelineProps> = ({
           </div>
         ) : (
           sortedYears.map(year => (
-            <div key={year} className="relative pl-14">
+            <div key={year} className="relative pl-10">
                {/* Year Dot Marker */}
                <div className="absolute left-2.5 top-1.5 w-4 h-4 rounded-full border-2 border-indigo-300 bg-white z-10 shadow-sm"></div>
                
                {/* Year Header */}
-               <div className="mb-3 flex items-center -ml-1">
+               <div className="mb-3 flex items-center ">
                   <span className="text-xs font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100 shadow-sm">
                       {year < 0 ? `BC ${Math.abs(year)}` : `AD ${year}`}
                   </span>

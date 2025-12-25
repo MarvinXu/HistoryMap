@@ -15,7 +15,7 @@ const HistoryMap: React.FC<HistoryMapProps> = ({ savedEvents, selectedEvent, onS
   const savedLayerRef = useRef<L.LayerGroup | null>(null);
 
   // Cache references to saved markers by ID for quick access during selection
-  const markersRef = useRef<{ [key: string]: L.CircleMarker }>({});
+  const markersRef = useRef<{ [key: string]: L.Marker }>({});
 
   useEffect(() => {
     if (!mapRef.current) {
@@ -52,15 +52,14 @@ const HistoryMap: React.FC<HistoryMapProps> = ({ savedEvents, selectedEvent, onS
     markersRef.current = {};
 
     savedEvents.forEach(event => {
-      const marker = L.circleMarker([event.location.lat, event.location.lng], {
-        radius: 9,
-        fillColor: "#4f46e5", // Indigo
-        color: "#fff",
-        weight: 3,
-        opacity: 1,
-        fillOpacity: 1,
-        className: 'saved-marker-pulse'
-      })
+      const icon = L.divIcon({
+        className: 'bg-transparent border-none', // Wrapper is invisible
+        html: `<div class="w-3 h-3 bg-indigo-600 border-2 border-white rounded-full shadow-md transition-transform hover:scale-125 cursor-pointer"></div>`,
+        iconSize: [12, 12], // Wrapper size matches content
+        iconAnchor: [6, 6], // Center of the 16x16 box
+        popupAnchor: [0, -10]
+      });
+      const marker = L.marker([event.location.lat, event.location.lng], { icon })
       .addTo(savedLayerRef.current)
       .bindPopup(`<b>${event.title}</b><br><small>${event.dateStr}</small>`, {autoPan: false});
       
@@ -77,7 +76,7 @@ const HistoryMap: React.FC<HistoryMapProps> = ({ savedEvents, selectedEvent, onS
     mapRef.current.flyTo(
       [selectedEvent.location.lat, selectedEvent.location.lng], 
       6, 
-      { duration: 1.5, easeLinearity: 0.1 }
+      { duration: 1, easeLinearity: 0.1 }
     );
 
     // If it's already saved, open its existing popup with delay
