@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Plus, ListChecks, X, AlertCircle, Loader2, Sparkles, Check, MapPin } from 'lucide-react';
+import { Plus, ListChecks, X, AlertCircle, Loader2, Sparkles, Check, MapPin, Copy } from 'lucide-react';
 import { HistoricalEvent } from '../../types';
 import { fetchEventDetailsBatch } from '../../services/geminiService';
 import { getYearFromDate } from '../../utils';
@@ -226,8 +226,14 @@ const AddEventModal: React.FC<AddEventModalProps> = ({ isOpen, onClose, onAddEve
         )}
 
         {error && (
-          <div className="bg-red-50 text-red-600 p-4 rounded-2xl flex items-start gap-3 text-sm border border-red-100 mb-4 shrink-0">
-            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+          <div className={`p-4 rounded-2xl flex items-start gap-3 text-sm border transition-all mb-4 shrink-0 ${error.includes('复制') ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
+            <div className={`w-5 h-5 shrink-0 mt-0.5 ${error.includes('复制') ? 'text-green-500' : 'text-red-500'}`}>
+              {error.includes('复制') ? (
+                <Check className="w-full h-full" />
+              ) : (
+                <AlertCircle className="w-full h-full" />
+              )}
+            </div>
             <div className="font-bold">{error}</div>
           </div>
         )}
@@ -239,16 +245,30 @@ const AddEventModal: React.FC<AddEventModalProps> = ({ isOpen, onClose, onAddEve
                 请输入历史事件名称（每行一个）。<br/>AI 将自动补充年份、地点和详细描述。
               </p>
             ) : (
-              <p className="text-sm text-gray-500 font-bold">
-                请按照以下格式输入事件信息（支持中文或英文字段名）：<br/>
-                <span className="text-indigo-600">标题::事件名称</span><br/>
-                <span className="text-indigo-600">日期::YYYY-MM-DD</span><br/>
-                <span className="text-indigo-600">地点::事件地点</span><br/>
-                <span className="text-indigo-600">纬度::30.1234</span><br/>
-                <span className="text-indigo-600">经度::120.5678</span><br/>
-                <span className="text-indigo-600">描述::事件描述</span><br/>
-                <span className="text-indigo-600">--</span>（分隔不同事件）
-              </p>
+              <div className="space-y-3">
+                <p className="text-sm text-gray-500 font-bold">
+                  请按照以下格式输入事件信息（支持中文或英文字段名）：<br/>
+                  <span className="text-indigo-600">标题::事件名称</span><br/>
+                  <span className="text-indigo-600">日期::YYYY-MM-DD</span><br/>
+                  <span className="text-indigo-600">地点::事件地点</span><br/>
+                  <span className="text-indigo-600">纬度::30.1234</span><br/>
+                  <span className="text-indigo-600">经度::120.5678</span><br/>
+                  <span className="text-indigo-600">描述::事件描述</span><br/>
+                  <span className="text-indigo-600">--</span>（分隔不同事件）
+                </p>
+                <button
+                  onClick={async () => {
+                    const prompt = "你是一个历史专家，我将会给你一些历史事件名称，请你根据我提供的格式补全信息。格式如下：\n 标题::事件名称\n 日期::YYYY-MM-DD\n 地点::事件地点\n 纬度::30.1234\n 经度::120.5678\n 描述::事件描述\n --（分隔不同事件）\n 稍后我将给出多个事件名称，请你补全信息后以代码块格式输出\n ";
+                    await navigator.clipboard.writeText(prompt);
+                    setError("提示文本已复制到剪贴板！");
+                    setTimeout(() => setError(null), 2000);
+                  }}
+                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-xl transition-all text-sm flex items-center justify-center gap-2"
+                >
+                  <Copy className="w-4 h-4" />
+                  复制AI提示词
+                </button>
+              </div>
             )}
             <textarea
               className="w-full h-48 bg-gray-50 border border-gray-200 rounded-2xl p-4 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none font-bold text-gray-900 resize-none leading-relaxed"
