@@ -51,6 +51,7 @@ export async function POST(request: Request) {
       3. 提供精确的 **地理位置 (location)**，包含经纬度和地名。
       4. 生成一段简要的 **描述 (description)**。
       5. 如果某个输入不是历史事件，请尽力解释它可能指代的内容，或者如果完全无法识别，可以跳过。
+      6. **id** 字段：为每个事件生成一个唯一的 ID，格式为 UUID。
     `;
 
     const response = await ai.models.generateContent({
