@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
 import { HistoricalEvent } from '../types';
 import { getYearFromDate, compareDateStrings } from '../utils';
 
@@ -43,6 +43,22 @@ const Timeline: React.FC<TimelineProps> = ({
     return result;
   }, [eventsByYear]);
 
+  // Scroll to selected event when it changes
+  useEffect(() => {
+    if (selectedEvent) {
+      // Find the event element by data attribute
+      const eventElement = document.querySelector(`[data-event-id="${selectedEvent.id}"]`);
+      if (eventElement) {
+        // Scroll the element into view with smooth animation
+        eventElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'nearest'
+        });
+      }
+    }
+  }, [selectedEvent]);
+
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 relative">
       <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] px-3 mb-6 flex items-center gap-2">
@@ -78,6 +94,7 @@ const Timeline: React.FC<TimelineProps> = ({
                       return (
                           <button
                               key={event.id}
+                              data-event-id={event.id}
                               onClick={() => onSelectEvent(event)}
                               className={`w-full text-left px-3 py-2.5 rounded-xl transition-all border relative overflow-hidden group/card ${isSelected
                                   ? 'bg-white border-indigo-200 shadow-sm ring-1 ring-indigo-500/20'
@@ -94,7 +111,7 @@ const Timeline: React.FC<TimelineProps> = ({
                                    )}
                               </div>
                           </button>
-                      )
+                      );
                   })}
                </div>
             </div>
@@ -106,8 +123,3 @@ const Timeline: React.FC<TimelineProps> = ({
 };
 
 export default Timeline;
-
-
-
-
-
